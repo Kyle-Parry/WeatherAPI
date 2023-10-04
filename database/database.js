@@ -7,4 +7,4 @@ dotenv.config();
 
 const connectionString = process.env.MDBURL;
 const client = new MongoClient(connectionString);
-export const db = client.db("weather-example");
+export const db = client.db(process.env.MDBNAME);

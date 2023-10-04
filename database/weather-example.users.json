@@ -1,0 +1,20 @@
+[{
+  "_id": {
+    "$oid": "64f7b3a21dd0d4d16e335d32"
+  },
+  "studentNumber": "651651",
+  "email": "test@email.com",
+  "password": "$2b$10$asDPQywWJqaTYSnbO0I8DeRu7lsvseGGz7o5QhNr9h1iq8NqhvwPi",
+  "role": "admin",
+  "authKey": "62b8a56b-efa7-4fb2-bc57-92a8eaf10111"
+},
+{
+  "_id": {
+    "$oid": "6504227166492c2650f9b9ad"
+  },
+  "studentNumber": 213,
+  "email": "new@email.com",
+  "password": "$2b$10$1XvoLrFu5DZlEBLmPj7XxeB7d84ioi4HZ/Ae.AM5OH0jPJrF1Zq/G",
+  "role": "student",
+  "authKey": null
+}]

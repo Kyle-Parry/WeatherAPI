@@ -157,11 +157,18 @@ readingController.get(
     if (!isNaN(parsedTime.getTime())) {
       Readings.getReadingByDateTime(deviceName, parsedTime)
         .then((reading) => {
-          res.status(200).json({
-            status: 200,
-            message: "Reading Found",
-            reading: reading,
-          });
+          if (reading) {
+            res.status(200).json({
+              status: 200,
+              message: "Reading Found",
+              reading: reading,
+            });
+          } else {
+            res.status(404).json({
+              status: 404,
+              message: "Reading Not Found",
+            });
+          }
         })
         .catch((error) => {
           res.status(500).json({
@@ -330,11 +337,18 @@ readingController.get(
     if (!isNaN(startTime.getTime()) && !isNaN(endTime.getTime())) {
       Readings.getReadingsByDateRange(startTime, endTime)
         .then((readings) => {
-          res.status(200).json({
-            status: 200,
-            message: "Readings Found",
-            readings: readings,
-          });
+          if (readings.length > 0) {
+            res.status(200).json({
+              status: 200,
+              message: "Readings Found",
+              readings: readings,
+            });
+          } else {
+            res.status(404).json({
+              status: 404,
+              message: "Readings Not Found",
+            });
+          }
         })
         .catch((error) => {
           res.status(500).json({
@@ -658,6 +672,24 @@ readingController.patch(
           }
         }
       }
+      #swagger.responses[404] = {
+        description: 'Not Found',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                status: {
+                  type: 'number'
+                },
+                message: {
+                  type: 'string'
+                }
+              }
+            }
+          }
+        }
+      }
       #swagger.responses[500] = {
         description: 'Database error',
         content: {
@@ -689,11 +721,18 @@ readingController.patch(
 
     Readings.update(reading)
       .then((reading) => {
-        res.status(200).json({
-          status: 200,
-          message: "Updated reading",
-          reading: reading,
-        });
+        if (reading) {
+          res.status(200).json({
+            status: 200,
+            message: "Reading Updated",
+            reading: reading,
+          });
+        } else {
+          res.status(404).json({
+            status: 404,
+            message: "Reading Not Found",
+          });
+        }
       })
       .catch((error) => {
         console.log(error);

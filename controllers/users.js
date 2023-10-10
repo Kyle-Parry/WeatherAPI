@@ -252,6 +252,24 @@ userController.get("/users/key/:authKey", (req, res) => {
                 }
             }
         } 
+        #swagger.responses[404] = {
+            description: 'Not Found',
+            content: {
+                'application/json': {
+                    schema: {
+                        type: 'object',
+                        properties: {
+                            status: {
+                                type: 'number'
+                            },
+                            message: {
+                                type: 'string'
+                            }
+                        }
+                    }
+                }
+            }
+        } 
         #swagger.responses[500] = {
             description: 'Database error',
             content: {
@@ -275,11 +293,18 @@ userController.get("/users/key/:authKey", (req, res) => {
 
   Users.getByAuthKey(authKey)
     .then((user) => {
-      res.status(200).json({
-        status: 200,
-        message: "Get user by authentication key",
-        user: user,
-      });
+      if (!user) {
+        res.status(404).json({
+          status: 404,
+          message: "User not found",
+        });
+      } else {
+        res.status(200).json({
+          status: 200,
+          message: "Found user",
+          user: user,
+        });
+      }
     })
     .catch((error) => {
       res.status(500).json({
@@ -488,7 +513,25 @@ userController.put("/users/:id", auth(["admin"]), (req, res) => {
                      },
                  }
              }
-         } 
+         }
+         #swagger.responses[404] = {
+                description: 'Not Found',
+                content: {
+                'application/json': {
+                    schema: {
+                    type: 'object',
+                    properties: {
+                        status: {
+                        type: 'number'
+                        },
+                        message: {
+                        type: 'string'
+                        }
+                    }
+                    }
+                }
+            }
+        }  
          #swagger.responses[500] = {
              description: 'Database error',
              content: {
@@ -529,17 +572,130 @@ userController.put("/users/:id", auth(["admin"]), (req, res) => {
 
   Users.update(user)
     .then((user) => {
-      res.status(200).json({
-        status: 200,
-        message: "Updated user",
-        user: user,
-      });
+      if (!user) {
+        res.status(404).json({
+          status: 404,
+          message: "User not found",
+        });
+      } else {
+        res.status(200).json({
+          status: 200,
+          message: "Updated user",
+          user: user,
+        });
+      }
     })
     .catch((error) => {
       console.log(error);
       res.status(500).json({
         status: 500,
         message: "Failed to update user",
+      });
+    });
+});
+
+userController.put("/users/role", auth(["admin"]), (req, res) => {
+  /* 
+        #swagger.summary = 'Update roles for users within a date range based on last login.'
+#swagger.parameters['startDate'] = {
+    in: 'body',
+    description: 'The start date for the date range.',
+    required: true,
+    type: 'string',
+    format: 'date-time'
+}
+#swagger.parameters['endDate'] = {
+    in: 'body',
+    description: 'The end date for the date range.',
+    required: true,
+    type: 'string',
+    format: 'date-time'
+}
+#swagger.parameters['role'] = {
+    in: 'body',
+    description: 'The new role to assign to users.',
+    required: true,
+    type: 'string',
+    enum: ['student', 'admin', 'station']
+}
+#swagger.responses[200] = {
+    description: 'roles updated successfully.',
+    content: {
+        'application/json': {
+            schema: {
+                type: 'object',
+                properties: {
+                    status: {
+                        type: 'number'
+                    },
+                    message: {
+                        type: 'string'
+                    }
+                }
+            }
+        }
+    }
+}
+#swagger.responses[404] = {
+    description: 'No users found within the specified date range.',
+    content: {
+        'application/json': {
+            schema: {
+                type: 'object',
+                properties: {
+                    status: {
+                        type: 'number'
+                    },
+                    message: {
+                        type: 'string'
+                    }
+                }
+            }
+        }
+    }
+}
+#swagger.responses[500] = {
+    description: 'Failed to update role.',
+    content: {
+        'application/json': {
+            schema: {
+                type: 'object',
+                properties: {
+                    status: {
+                        type: 'number'
+                    },
+                    message: {
+                        type: 'string'
+                    }
+                }
+            }
+        }
+    }
+}
+
+  */
+
+  const { startDate, endDate, role } = req.body;
+
+  Users.updateRole(startDate, endDate, role)
+    .then((result) => {
+      if (result.modifiedCount > 0) {
+        res.status(200).json({
+          status: 200,
+          message: "roles updated successfully.",
+        });
+      } else {
+        res.status(404).json({
+          status: 404,
+          message: "No users found within the specified date range.",
+        });
+      }
+    })
+    .catch((error) => {
+      console.error(error);
+      res.status(500).json({
+        status: 500,
+        message: "Failed to update roles.",
       });
     });
 });
@@ -631,5 +787,109 @@ userController.delete("/users/:id", auth(["admin"]), (req, res) => {
       });
     });
 });
+
+userController.delete(
+  "/users/deleteByDateRange",
+  auth(["admin"]),
+  async (req, res) => {
+    /* 
+    #swagger.summary = 'Delete users within a date range based on last login.'
+    #swagger.parameters['startDate'] = {
+        in: 'body',
+        description: 'The start date for the date range.',
+        required: true,
+        type: 'string',
+        format: 'date-time'
+    }
+    #swagger.parameters['endDate'] = {
+        in: 'body',
+        description: 'The end date for the date range.',
+        required: true,
+        type: 'string',
+        format: 'date-time'
+    } 
+    #swagger.responses[200] = {
+        description: 'Users within the specified date range deleted successfully.',
+        content: {
+            'application/json': {
+                schema: {
+                    type: 'object',
+                    properties: {
+                        status: {
+                            type: 'number'
+                        },
+                        message: {
+                            type: 'string'
+                        }
+                    }
+                }
+            }
+        }
+    }
+    #swagger.responses[404] = {
+        description: 'No users found within the specified date range to delete.',
+        content: {
+            'application/json': {
+                schema: {
+                    type: 'object',
+                    properties: {
+                        status: {
+                            type: 'number'
+                        },
+                        message: {
+                            type: 'string'
+                        }
+                    }
+                }
+            }
+        }
+    }
+    #swagger.responses[500] = {
+        description: 'Failed to delete users within the specified date range.',
+        content: {
+            'application/json': {
+                schema: {
+                    type: 'object',
+                    properties: {
+                        status: {
+                            type: 'number'
+                        },
+                        message: {
+                            type: 'string'
+                        }
+                    }
+                }
+            }
+        }
+    } 
+    */
+
+    const { startDate, endDate } = req.body;
+
+    Users.deleteByDateRange(startDate, endDate)
+      .then((result) => {
+        if (result.deletedCount > 0) {
+          res.status(200).json({
+            status: 200,
+            message:
+              "Users within the specified date range deleted successfully.",
+          });
+        } else {
+          res.status(404).json({
+            status: 404,
+            message:
+              "No users found within the specified date range to delete.",
+          });
+        }
+      })
+      .catch((error) => {
+        console.error(error);
+        res.status(500).json({
+          status: 500,
+          message: "Failed to delete users within the specified date range.",
+        });
+      });
+  }
+);
 
 export default userController;

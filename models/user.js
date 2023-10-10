@@ -61,6 +61,29 @@ export async function update(user) {
   );
 }
 
+export async function updateRole(startDate, endDate, role) {
+  return db.collection("users").updateMany(
+    {
+      lastLogin: { $gte: new Date(startDate), $lte: new Date(endDate) },
+    },
+    {
+      $set: {
+        role: role,
+      },
+    }
+  );
+}
+
 export async function deleteById(id) {
   return db.collection("users").deleteOne({ _id: new ObjectId(id) });
+}
+
+export async function deleteByDateRange(startDate, endDate) {
+  const result = await db.collection("users").deleteMany({
+    lastLogin: {
+      $gte: new Date(startDate),
+      $lte: new Date(endDate),
+    },
+  });
+  return result;
 }

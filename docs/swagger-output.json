@@ -373,6 +373,267 @@
         }
       }
     },
+    "/users/role": {
+      "options": {
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "startDate": {
+                    "example": "any"
+                  },
+                  "endDate": {
+                    "example": "any"
+                  },
+                  "role": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Update roles for users within a date range based on last login.",
+        "description": "",
+        "parameters": [
+          {
+            "name": "startDate",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "startDate": {
+                  "example": "any"
+                },
+                "endDate": {
+                  "example": "any"
+                },
+                "role": {
+                  "example": "any"
+                }
+              }
+            },
+            "description": "The start date for the date range.",
+            "required": true,
+            "format": "date-time"
+          },
+          {
+            "name": "endDate",
+            "in": "body",
+            "description": "The end date for the date range.",
+            "required": true,
+            "format": "date-time",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "name": "role",
+            "in": "body",
+            "description": "The new role to assign to users.",
+            "required": true,
+            "enum": [
+              "student",
+              "admin",
+              "station"
+            ],
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Roles updated successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "number"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No users found within the specified date range.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "number"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Failed to update role.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "number"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "startDate": {
+                    "example": "any"
+                  },
+                  "endDate": {
+                    "example": "any"
+                  },
+                  "role": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/deleteInactive": {
+      "options": {
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "startDate": {
+                    "example": "any"
+                  },
+                  "endDate": {
+                    "example": "any"
+                  },
+                  "role": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete users who have not logged in for 30 days or more.",
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "Users who have not logged in for 30 days or more deleted successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "number"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No users who have not logged in for 30 days or more to delete.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "number"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Failed to delete inactive users.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "number"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/users/{id}": {
       "options": {
         "description": "",
@@ -403,13 +664,10 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "studentNumber": {
+                  "startDate": {
                     "example": "any"
                   },
-                  "email": {
-                    "example": "any"
-                  },
-                  "password": {
+                  "endDate": {
                     "example": "any"
                   },
                   "role": {
@@ -610,247 +868,6 @@
                     "message": {
                       "type": "string"
                     }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/users/role": {
-      "put": {
-        "summary": "Update roles for users within a date range based on last login.",
-        "description": "",
-        "parameters": [
-          {
-            "name": "startDate",
-            "in": "body",
-            "schema": {
-              "type": "object",
-              "properties": {
-                "startDate": {
-                  "example": "any"
-                },
-                "endDate": {
-                  "example": "any"
-                },
-                "role": {
-                  "example": "any"
-                }
-              }
-            },
-            "description": "The start date for the date range.",
-            "required": true,
-            "format": "date-time"
-          },
-          {
-            "name": "endDate",
-            "in": "body",
-            "description": "The end date for the date range.",
-            "required": true,
-            "format": "date-time",
-            "schema": {
-              "type": "object",
-              "properties": {}
-            }
-          },
-          {
-            "name": "role",
-            "in": "body",
-            "description": "The new role to assign to users.",
-            "required": true,
-            "enum": [
-              "student",
-              "admin",
-              "station"
-            ],
-            "schema": {
-              "type": "object",
-              "properties": {}
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "roles updated successfully.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "status": {
-                      "type": "number"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "No users found within the specified date range.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "status": {
-                      "type": "number"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Failed to update role.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "status": {
-                      "type": "number"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "startDate": {
-                    "example": "any"
-                  },
-                  "endDate": {
-                    "example": "any"
-                  },
-                  "role": {
-                    "example": "any"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/users/deleteByDateRange": {
-      "delete": {
-        "summary": "Delete users within a date range based on last login.",
-        "description": "",
-        "parameters": [
-          {
-            "name": "startDate",
-            "in": "body",
-            "schema": {
-              "type": "object",
-              "properties": {
-                "startDate": {
-                  "example": "any"
-                },
-                "endDate": {
-                  "example": "any"
-                }
-              }
-            },
-            "description": "The start date for the date range.",
-            "required": true,
-            "format": "date-time"
-          },
-          {
-            "name": "endDate",
-            "in": "body",
-            "description": "The end date for the date range.",
-            "required": true,
-            "format": "date-time",
-            "schema": {
-              "type": "object",
-              "properties": {}
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Users within the specified date range deleted successfully.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "status": {
-                      "type": "number"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "No users found within the specified date range to delete.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "status": {
-                      "type": "number"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Failed to delete users within the specified date range.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "status": {
-                      "type": "number"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "startDate": {
-                    "example": "any"
-                  },
-                  "endDate": {
-                    "example": "any"
                   }
                 }
               }

@@ -101,6 +101,7 @@ userController.post("/users/login", (req, res) => {
       if (bcrypt.compareSync(loginData.password, user.password)) {
         // Generate new api key
         user.authKey = uuid4().toString();
+        user.lastLogin = new Date();
 
         // Update user record with new api key
         Users.update(user).then((result) => {
@@ -108,6 +109,7 @@ userController.post("/users/login", (req, res) => {
             status: 200,
             message: "user logged in",
             authKey: user.authKey,
+            lastLogin: user.lastLogin,
           });
         });
       } else {
@@ -186,12 +188,15 @@ userController.post("/users/logout", (req, res) => {
   const authKey = req.body.authKey;
   Users.getByAuthKey(authKey)
     .then((user) => {
+      console.log(user);
       user.authKey = null;
       Users.update(user).then((user) => {
         res.status(200).json({
           status: 200,
           message: "user logged out",
+          authKey: user.authKey,
         });
+        console.log(user);
       });
     })
     .catch((error) => {
@@ -419,6 +424,7 @@ userController.post("/users", auth(["admin"]), (req, res) => {
     email,
     hashedPassword,
     role,
+    null,
     null
   );
 
@@ -439,164 +445,10 @@ userController.post("/users", auth(["admin"]), (req, res) => {
     });
 });
 
-userController.options("/users/:id", cors());
-userController.put("/users/:id", auth(["admin"]), (req, res) => {
-  /* 
-  #swagger.summary = 'Update user'
-      #swagger.parameters['id'] = {
-        in: 'path',
-        description: 'ID of the reading to update',
-        required: true,
-        type: 'string'
-      }
-#swagger.summary = 'Update user'
-    #swagger.requestBody = {
-        description: 'Update a user account',
-        content: {
-            'application/json': {
-                schema: {
-                    type: 'object',
-                    properties: {
-                        studentNumber: {
-                            type: 'number'
-                        },
-                        email: {
-                            type: 'string'
-                        },
-                        password: {
-                            type: 'string'
-                        },
-                        role: {
-                            type: 'string',
-                            enum: ['student', 'admin', 'station']
-                        },
-                    }
-                },
-            }
-        }
-    } 
-         #swagger.responses[200] = {
-             description: 'Updated user',
-             content: {
-                 'application/json': {
-                     schema: {
-                         type: 'object',
-                         properties: {
-                             status: {
-                                 type: 'number'
-                             },
-                             message: {
-                                 type: 'string'
-                             },
-                             user: {
-                                 type: 'object',
-                                 properties: {
-                                     studentNumber: {
-                                          type: 'number'
-                                      },
-                                     email: {
-                                         type: 'string'
-                                     },
-                                     password: {
-                                         type: 'string'
-                                     },
-                                     role: {
-                                         type: 'string',
-                                         enum: ['student', 'admin', 'station']
-                                     },
-                                     authKey: {
-                                         type: 'string'
-                                     },
-                                 }
-                             }
-                         }
-                     },
-                 }
-             }
-         }
-         #swagger.responses[404] = {
-                description: 'Not Found',
-                content: {
-                'application/json': {
-                    schema: {
-                    type: 'object',
-                    properties: {
-                        status: {
-                        type: 'number'
-                        },
-                        message: {
-                        type: 'string'
-                        }
-                    }
-                    }
-                }
-            }
-        }  
-         #swagger.responses[500] = {
-             description: 'Database error',
-             content: {
-                 'application/json': {
-                     schema: {
-                         type: 'object',
-                         properties: {
-                             status: {
-                                 type: 'number'
-                             },
-                             message: {
-                                 type: 'string'
-                             },
-                         }
-                     },
-                 }
-             }
-         } 
-      */
-
-  const _id = req.params.id;
-
-  const { studentNumber, email, password, role } = req.body;
-
-  let hashedPassword = password;
-  if (!password.startsWith("$2a")) {
-    hashedPassword = bcrypt.hashSync(password, 10);
-  }
-
-  const user = Users.User(
-    _id,
-    studentNumber,
-    email,
-    hashedPassword,
-    role,
-    null
-  );
-
-  Users.update(user)
-    .then((user) => {
-      if (!user) {
-        res.status(404).json({
-          status: 404,
-          message: "User not found",
-        });
-      } else {
-        res.status(200).json({
-          status: 200,
-          message: "Updated user",
-          user: user,
-        });
-      }
-    })
-    .catch((error) => {
-      console.log(error);
-      res.status(500).json({
-        status: 500,
-        message: "Failed to update user",
-      });
-    });
-});
-
+userController.options("/users/role", cors());
 userController.put("/users/role", auth(["admin"]), (req, res) => {
   /* 
-        #swagger.summary = 'Update roles for users within a date range based on last login.'
+#swagger.summary = 'Update roles for users within a date range based on last login.'
 #swagger.parameters['startDate'] = {
     in: 'body',
     description: 'The start date for the date range.',
@@ -619,7 +471,7 @@ userController.put("/users/role", auth(["admin"]), (req, res) => {
     enum: ['student', 'admin', 'station']
 }
 #swagger.responses[200] = {
-    description: 'roles updated successfully.',
+    description: 'Roles updated successfully.',
     content: {
         'application/json': {
             schema: {
@@ -672,8 +524,7 @@ userController.put("/users/role", auth(["admin"]), (req, res) => {
         }
     }
 }
-
-  */
+*/
 
   const { startDate, endDate, role } = req.body;
 
@@ -696,6 +547,254 @@ userController.put("/users/role", auth(["admin"]), (req, res) => {
       res.status(500).json({
         status: 500,
         message: "Failed to update roles.",
+      });
+    });
+});
+
+userController.options("/users/deleteInactive", cors());
+userController.delete(
+  "/users/deleteInactive",
+  auth(["admin"]),
+  async (req, res) => {
+    /* 
+        #swagger.summary = 'Delete users who have not logged in for 30 days or more.'
+        #swagger.responses[200] = {
+            description: 'Users who have not logged in for 30 days or more deleted successfully.',
+            content: {
+                'application/json': {
+                    schema: {
+                        type: 'object',
+                        properties: {
+                            status: {
+                                type: 'number'
+                            },
+                            message: {
+                                type: 'string'
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        #swagger.responses[404] = {
+            description: 'No users who have not logged in for 30 days or more to delete.',
+            content: {
+                'application/json': {
+                    schema: {
+                        type: 'object',
+                        properties: {
+                            status: {
+                                type: 'number'
+                            },
+                            message: {
+                                type: 'string'
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        #swagger.responses[500] = {
+            description: 'Failed to delete inactive users.',
+            content: {
+                'application/json': {
+                    schema: {
+                        type: 'object',
+                        properties: {
+                            status: {
+                                type: 'number'
+                            },
+                            message: {
+                                type: 'string'
+                            }
+                        }
+                    }
+                }
+            }
+        } 
+        */
+
+    // Calculate the date 30 days ago from the current date
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    Users.deleteInactiveUsers(thirtyDaysAgo)
+      .then((result) => {
+        if (result.deletedCount > 0) {
+          res.status(200).json({
+            status: 200,
+            message:
+              "Users who have not logged in for 30 days or more deleted successfully.",
+          });
+        } else {
+          res.status(404).json({
+            status: 404,
+            message:
+              "No users who have not logged in for 30 days or more to delete.",
+          });
+        }
+      })
+      .catch((error) => {
+        console.error(error);
+        res.status(500).json({
+          status: 500,
+          message: "Failed to delete inactive users.",
+        });
+      });
+  }
+);
+
+userController.options("/users/:id", cors());
+userController.put("/users/:id", auth(["admin"]), (req, res) => {
+  /* 
+    #swagger.summary = 'Update user'
+        #swagger.parameters['id'] = {
+          in: 'path',
+          description: 'ID of the reading to update',
+          required: true,
+          type: 'string'
+        }
+  #swagger.summary = 'Update user'
+      #swagger.requestBody = {
+          description: 'Update a user account',
+          content: {
+              'application/json': {
+                  schema: {
+                      type: 'object',
+                      properties: {
+                          studentNumber: {
+                              type: 'number'
+                          },
+                          email: {
+                              type: 'string'
+                          },
+                          password: {
+                              type: 'string'
+                          },
+                          role: {
+                              type: 'string',
+                              enum: ['student', 'admin', 'station']
+                          },
+                      }
+                  },
+              }
+          }
+      } 
+           #swagger.responses[200] = {
+               description: 'Updated user',
+               content: {
+                   'application/json': {
+                       schema: {
+                           type: 'object',
+                           properties: {
+                               status: {
+                                   type: 'number'
+                               },
+                               message: {
+                                   type: 'string'
+                               },
+                               user: {
+                                   type: 'object',
+                                   properties: {
+                                       studentNumber: {
+                                            type: 'number'
+                                        },
+                                       email: {
+                                           type: 'string'
+                                       },
+                                       password: {
+                                           type: 'string'
+                                       },
+                                       role: {
+                                           type: 'string',
+                                           enum: ['student', 'admin', 'station']
+                                       },
+                                       authKey: {
+                                           type: 'string'
+                                       },
+                                   }
+                               }
+                           }
+                       },
+                   }
+               }
+           }
+           #swagger.responses[404] = {
+                  description: 'Not Found',
+                  content: {
+                  'application/json': {
+                      schema: {
+                      type: 'object',
+                      properties: {
+                          status: {
+                          type: 'number'
+                          },
+                          message: {
+                          type: 'string'
+                          }
+                      }
+                      }
+                  }
+              }
+          }  
+           #swagger.responses[500] = {
+               description: 'Database error',
+               content: {
+                   'application/json': {
+                       schema: {
+                           type: 'object',
+                           properties: {
+                               status: {
+                                   type: 'number'
+                               },
+                               message: {
+                                   type: 'string'
+                               },
+                           }
+                       },
+                   }
+               }
+           } 
+        */
+
+  const _id = req.params.id;
+
+  const { studentNumber, email, password, role } = req.body;
+
+  let hashedPassword = password;
+  if (!password.startsWith("$2a")) {
+    hashedPassword = bcrypt.hashSync(password, 10);
+  }
+
+  const user = Users.User(
+    _id,
+    studentNumber,
+    email,
+    hashedPassword,
+    role,
+    null
+  );
+
+  Users.update(user)
+    .then((user) => {
+      if (!user) {
+        res.status(404).json({
+          status: 404,
+          message: "User not found",
+        });
+      } else {
+        res.status(200).json({
+          status: 200,
+          message: "Updated user",
+          user: user,
+        });
+      }
+    })
+    .catch((error) => {
+      console.log(error);
+      res.status(500).json({
+        status: 500,
+        message: "Failed to update user",
       });
     });
 });
@@ -787,109 +886,5 @@ userController.delete("/users/:id", auth(["admin"]), (req, res) => {
       });
     });
 });
-
-userController.delete(
-  "/users/deleteByDateRange",
-  auth(["admin"]),
-  async (req, res) => {
-    /* 
-    #swagger.summary = 'Delete users within a date range based on last login.'
-    #swagger.parameters['startDate'] = {
-        in: 'body',
-        description: 'The start date for the date range.',
-        required: true,
-        type: 'string',
-        format: 'date-time'
-    }
-    #swagger.parameters['endDate'] = {
-        in: 'body',
-        description: 'The end date for the date range.',
-        required: true,
-        type: 'string',
-        format: 'date-time'
-    } 
-    #swagger.responses[200] = {
-        description: 'Users within the specified date range deleted successfully.',
-        content: {
-            'application/json': {
-                schema: {
-                    type: 'object',
-                    properties: {
-                        status: {
-                            type: 'number'
-                        },
-                        message: {
-                            type: 'string'
-                        }
-                    }
-                }
-            }
-        }
-    }
-    #swagger.responses[404] = {
-        description: 'No users found within the specified date range to delete.',
-        content: {
-            'application/json': {
-                schema: {
-                    type: 'object',
-                    properties: {
-                        status: {
-                            type: 'number'
-                        },
-                        message: {
-                            type: 'string'
-                        }
-                    }
-                }
-            }
-        }
-    }
-    #swagger.responses[500] = {
-        description: 'Failed to delete users within the specified date range.',
-        content: {
-            'application/json': {
-                schema: {
-                    type: 'object',
-                    properties: {
-                        status: {
-                            type: 'number'
-                        },
-                        message: {
-                            type: 'string'
-                        }
-                    }
-                }
-            }
-        }
-    } 
-    */
-
-    const { startDate, endDate } = req.body;
-
-    Users.deleteByDateRange(startDate, endDate)
-      .then((result) => {
-        if (result.deletedCount > 0) {
-          res.status(200).json({
-            status: 200,
-            message:
-              "Users within the specified date range deleted successfully.",
-          });
-        } else {
-          res.status(404).json({
-            status: 404,
-            message:
-              "No users found within the specified date range to delete.",
-          });
-        }
-      })
-      .catch((error) => {
-        console.error(error);
-        res.status(500).json({
-          status: 500,
-          message: "Failed to delete users within the specified date range.",
-        });
-      });
-  }
-);
 
 export default userController;

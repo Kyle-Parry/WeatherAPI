@@ -1,7 +1,15 @@
 import { ObjectId } from "mongodb";
 import { db } from "../database/database.js";
 
-export function User(_id, studentNumber, email, password, role, authKey) {
+export function User(
+  _id,
+  studentNumber,
+  email,
+  password,
+  role,
+  authKey,
+  lastLogin
+) {
   return {
     _id,
     studentNumber,
@@ -9,6 +17,7 @@ export function User(_id, studentNumber, email, password, role, authKey) {
     password,
     role,
     authKey,
+    lastLogin,
   };
 }
 
@@ -56,6 +65,8 @@ export async function update(user) {
         studentNumber: user.studentNumber,
         email: user.email,
         role: user.role,
+        authKey: user.authKey,
+        lastLogin: user.lastLogin,
       },
     }
   );
@@ -78,11 +89,10 @@ export async function deleteById(id) {
   return db.collection("users").deleteOne({ _id: new ObjectId(id) });
 }
 
-export async function deleteByDateRange(startDate, endDate) {
+export async function deleteInactiveUsers(thirtyDaysAgo) {
   const result = await db.collection("users").deleteMany({
     lastLogin: {
-      $gte: new Date(startDate),
-      $lte: new Date(endDate),
+      $lte: thirtyDaysAgo,
     },
   });
   return result;

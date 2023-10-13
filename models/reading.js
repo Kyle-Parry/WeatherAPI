@@ -34,7 +34,6 @@ export function Reading(
 }
 
 export async function create(readings) {
-  // Insert the sighting document and implicitly add the new _id to sighting
   db.collection("readings").insertMany(readings);
 }
 
@@ -80,5 +79,32 @@ export async function getReadingsByDateRange(startTime, endTime) {
     return readings;
   } else {
     return Promise.reject("No readings found within the specified date range.");
+  }
+}
+
+export async function getMaxPrecipitation(deviceName) {
+  try {
+    const fiveMonthsAgo = new Date();
+    fiveMonthsAgo.setMonth(fiveMonthsAgo.getMonth() - 5);
+    console.log(fiveMonthsAgo);
+    const result = await db
+      .collection("readings")
+      .find({
+        deviceName: deviceName,
+        time: { $gte: fiveMonthsAgo },
+      })
+      .sort({ precipitation: -1 })
+      .limit(1)
+      .project({
+        deviceName: 1,
+        time: 1,
+        precipitation: 1,
+        _id: 0,
+      })
+      .toArray();
+
+    return result[0];
+  } catch (error) {
+    throw error;
   }
 }

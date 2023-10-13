@@ -6,6 +6,101 @@ import cors from "cors";
 const readingController = Router();
 
 readingController.get(
+  "/readings/precipitation/:deviceName",
+  auth(["admin", "student"]),
+  async (req, res) => {
+    /* 
+      #swagger.summary = 'Get the maximum precipitation reading for a specific sensor in the last 5 months.'
+      #swagger.parameters['deviceName'] = {
+        in: 'path',
+        description: 'The name of the device to filter readings.',
+        type: 'string'
+      }
+      #swagger.responses[200] = {
+        description: 'Maximum Precipitation Reading',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                deviceName: {
+                  type: 'string'
+                },
+                time: {
+                  type: 'string',
+                  format: 'date-time'
+                },
+                precipitation: {
+                  type: 'number',
+                  format: 'double'
+                }
+              }
+            }
+          }
+        }
+      }
+      #swagger.responses[404] = {
+        description: 'Not Found',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                status: {
+                  type: 'number'
+                },
+                message: {
+                  type: 'string'
+                }
+              }
+            }
+          }
+        }
+      }
+      #swagger.responses[500] = {
+        description: 'Database error',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                status: {
+                  type: 'number'
+                },
+                message: {
+                  type: 'string'
+                }
+              }
+            }
+          }
+        }
+      }
+    */
+
+    const { deviceName } = req.params;
+
+    try {
+      const result = await Readings.getMaxPrecipitation(deviceName);
+
+      if (result) {
+        res.status(200).json(result);
+      } else {
+        res.status(404).json({
+          status: 404,
+          message:
+            "Maximum precipitation reading not found for the specified sensor in the last 5 months.",
+        });
+      }
+    } catch (error) {
+      res.status(500).json({
+        status: 500,
+        message: "Database error: " + error,
+      });
+    }
+  }
+);
+
+readingController.get(
   "/readings/:deviceName/:time",
   auth(["admin", "student"]),
   (req, res) => {
@@ -547,43 +642,14 @@ readingController.post(
            } 
         */
 
-    const {
-      deviceName,
-      time,
-      latitude,
-      longitude,
-      humidity,
-      precipitation,
-      temperature,
-      maxWindSpeed,
-      solarRadiation,
-      vaporPressure,
-      windDirection,
-      atmosphericPressure,
-    } = req.body;
-
-    const readings = Readings.Reading(
-      null,
-      deviceName,
-      time,
-      latitude,
-      longitude,
-      humidity,
-      precipitation,
-      temperature,
-      maxWindSpeed,
-      solarRadiation,
-      vaporPressure,
-      windDirection,
-      atmosphericPressure
-    );
+    const readings = req.body;
 
     Readings.create(readings)
-      .then((readings) => {
+      .then((insertedReadings) => {
         res.status(200).json({
           status: 200,
           message: "Readings Created",
-          readings: readings,
+          readings: insertedReadings,
         });
       })
       .catch((error) => {

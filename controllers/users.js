@@ -614,7 +614,6 @@ userController.delete(
         } 
         */
 
-    // Calculate the date 30 days ago from the current date
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
@@ -756,16 +755,13 @@ userController.put("/users/:id", auth(["admin"]), (req, res) => {
                }
            } 
         */
-
   const _id = req.params.id;
-
   const { studentNumber, email, password, role } = req.body;
 
   let hashedPassword = password;
   if (!password.startsWith("$2a")) {
     hashedPassword = bcrypt.hashSync(password, 10);
   }
-
   const user = Users.User(
     _id,
     studentNumber,

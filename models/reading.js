@@ -84,14 +84,15 @@ export async function getReadingsByDateRange(startTime, endTime) {
 
 export async function getMaxPrecipitation(deviceName) {
   try {
-    const fiveMonthsAgo = new Date();
+    const currentDate = new Date();
+    const fiveMonthsAgo = new Date(currentDate);
     fiveMonthsAgo.setMonth(fiveMonthsAgo.getMonth() - 5);
     console.log(fiveMonthsAgo);
     const result = await db
       .collection("readings")
       .find({
         deviceName: deviceName,
-        time: { $gte: fiveMonthsAgo },
+        time: { $gte: "2023-05-17T03:49:46.000Z" },
       })
       .sort({ precipitation: -1 })
       .limit(1)

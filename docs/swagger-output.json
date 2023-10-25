@@ -323,6 +323,24 @@
               }
             }
           },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "number"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "500": {
             "description": "Database error",
             "content": {
@@ -411,55 +429,6 @@
       "put": {
         "summary": "Update roles for users within a date range based on last login.",
         "description": "",
-        "parameters": [
-          {
-            "name": "startDate",
-            "in": "body",
-            "schema": {
-              "type": "object",
-              "properties": {
-                "startDate": {
-                  "example": "any"
-                },
-                "endDate": {
-                  "example": "any"
-                },
-                "role": {
-                  "example": "any"
-                }
-              }
-            },
-            "description": "The start date for the date range.",
-            "required": true,
-            "format": "date-time"
-          },
-          {
-            "name": "endDate",
-            "in": "body",
-            "description": "The end date for the date range.",
-            "required": true,
-            "format": "date-time",
-            "schema": {
-              "type": "object",
-              "properties": {}
-            }
-          },
-          {
-            "name": "role",
-            "in": "body",
-            "description": "The new role to assign to users.",
-            "required": true,
-            "enum": [
-              "student",
-              "admin",
-              "station"
-            ],
-            "schema": {
-              "type": "object",
-              "properties": {}
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "Roles updated successfully.",
@@ -517,19 +486,27 @@
           }
         },
         "requestBody": {
+          "description": "Parameters for updating user roles within a date range.",
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
                 "properties": {
                   "startDate": {
-                    "example": "any"
+                    "type": "string",
+                    "format": "date-time"
                   },
                   "endDate": {
-                    "example": "any"
+                    "type": "string",
+                    "format": "date-time"
                   },
                   "role": {
-                    "example": "any"
+                    "type": "string",
+                    "enum": [
+                      "student",
+                      "admin",
+                      "station"
+                    ]
                   }
                 }
               }
@@ -956,7 +933,7 @@
     },
     "/readings/{deviceName}/{time}": {
       "get": {
-        "summary": "Get a reading by device name and specific date and time.",
+        "summary": "Find weather data recorded by a specific station within an hour of a given date and time.",
         "description": "",
         "parameters": [
           {
@@ -966,7 +943,7 @@
             "schema": {
               "type": "string"
             },
-            "description": "The name of the device to filter readings."
+            "description": "The name of the station to filter weather data."
           },
           {
             "name": "time",
@@ -975,12 +952,12 @@
             "schema": {
               "type": "string"
             },
-            "description": "The date and time in the format YYYY-MM-DDTHH:mm:ssZ to filter readings."
+            "description": "The date and time in the format YYYY-MM-DDTHH:mm:ssZ to filter weather data."
           }
         ],
         "responses": {
           "200": {
-            "description": "Found Reading",
+            "description": "Found Weather Data",
             "content": {
               "application/json": {
                 "schema": {
@@ -992,58 +969,34 @@
                     "message": {
                       "type": "string"
                     },
-                    "reading": {
-                      "type": "object",
-                      "properties": {
-                        "_id": {
-                          "type": "string"
-                        },
-                        "deviceName": {
-                          "type": "string"
-                        },
-                        "time": {
-                          "type": "string",
-                          "format": "date-time"
-                        },
-                        "latitude": {
-                          "type": "number",
-                          "format": "double"
-                        },
-                        "longitude": {
-                          "type": "number",
-                          "format": "double"
-                        },
-                        "humidity": {
-                          "type": "number",
-                          "format": "double"
-                        },
-                        "precipitation": {
-                          "type": "number",
-                          "format": "double"
-                        },
-                        "temperature": {
-                          "type": "number",
-                          "format": "double"
-                        },
-                        "maxWindSpeed": {
-                          "type": "number",
-                          "format": "double"
-                        },
-                        "solarRadiation": {
-                          "type": "number",
-                          "format": "double"
-                        },
-                        "vaporPressure": {
-                          "type": "number",
-                          "format": "double"
-                        },
-                        "windDirection": {
-                          "type": "number",
-                          "format": "double"
-                        },
-                        "atmosphericPressure": {
-                          "type": "number",
-                          "format": "double"
+                    "weatherData": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "deviceName": {
+                            "type": "string"
+                          },
+                          "time": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "temperature": {
+                            "type": "number",
+                            "format": "double"
+                          },
+                          "atmosphericPressure": {
+                            "type": "number",
+                            "format": "double"
+                          },
+                          "solarRadiation": {
+                            "type": "number",
+                            "format": "double"
+                          },
+                          "precipitation": {
+                            "type": "number",
+                            "format": "double"
+                          }
                         }
                       }
                     }
@@ -1111,7 +1064,7 @@
     },
     "/readings/maxTemp": {
       "get": {
-        "summary": "Get a reading by device name and specific date and time.",
+        "summary": "Get maximum temperature readings by device name and date range.",
         "description": "",
         "parameters": [
           {
@@ -1133,71 +1086,24 @@
         ],
         "responses": {
           "200": {
-            "description": "Found Reading",
+            "description": "Maximum Temperature Readings Found",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "status": {
-                      "type": "number"
-                    },
-                    "message": {
-                      "type": "string"
-                    },
-                    "reading": {
-                      "type": "object",
-                      "properties": {
-                        "_id": {
-                          "type": "string"
-                        },
-                        "deviceName": {
-                          "type": "string"
-                        },
-                        "time": {
-                          "type": "string",
-                          "format": "date-time"
-                        },
-                        "latitude": {
-                          "type": "number",
-                          "format": "double"
-                        },
-                        "longitude": {
-                          "type": "number",
-                          "format": "double"
-                        },
-                        "humidity": {
-                          "type": "number",
-                          "format": "double"
-                        },
-                        "precipitation": {
-                          "type": "number",
-                          "format": "double"
-                        },
-                        "temperature": {
-                          "type": "number",
-                          "format": "double"
-                        },
-                        "maxWindSpeed": {
-                          "type": "number",
-                          "format": "double"
-                        },
-                        "solarRadiation": {
-                          "type": "number",
-                          "format": "double"
-                        },
-                        "vaporPressure": {
-                          "type": "number",
-                          "format": "double"
-                        },
-                        "windDirection": {
-                          "type": "number",
-                          "format": "double"
-                        },
-                        "atmosphericPressure": {
-                          "type": "number",
-                          "format": "double"
-                        }
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "deviceName": {
+                        "type": "string"
+                      },
+                      "time": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "temp": {
+                        "type": "number",
+                        "format": "double"
                       }
                     }
                   }

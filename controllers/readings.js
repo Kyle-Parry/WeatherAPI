@@ -105,90 +105,66 @@ readingController.get(
   auth(["admin", "student"]),
   (req, res) => {
     /* 
-        #swagger.summary = 'Get a reading by device name and specific date and time.'
-        #swagger.parameters['deviceName'] = {
-          in: 'path',
-          description: 'The name of the device to filter readings.',
-          type: 'string'
+        #swagger.summary = 'Find weather data recorded by a specific station within an hour of a given date and time.'
+#swagger.parameters['deviceName'] = {
+    in: 'path',
+    description: 'The name of the station to filter weather data.',
+    type: 'string'
+}
+#swagger.parameters['time'] = {
+    in: 'path',
+    description: 'The date and time in the format YYYY-MM-DDTHH:mm:ssZ to filter weather data.',
+    type: 'string'
+}
+#swagger.responses[200] = {
+    description: 'Found Weather Data',
+    content: {
+        'application/json': {
+            schema: {
+                type: 'object',
+                properties: {
+                    status: {
+                        type: 'number'
+                    },
+                    message: {
+                        type: 'string'
+                    },
+                    weatherData: {
+                        type: 'array',
+                        items: {
+                            type: 'object',
+                            properties: {
+                                deviceName: {
+                                    type: 'string'
+                                },
+                                time: {
+                                    type: 'string',
+                                    format: 'date-time'
+                                },
+                                temperature: {
+                                    type: 'number',
+                                    format: 'double'
+                                },
+                                atmosphericPressure: {
+                                    type: 'number',
+                                    format: 'double'
+                                },
+                                solarRadiation: {
+                                    type: 'number',
+                                    format: 'double'
+                                },
+                                precipitation: {
+                                    type: 'number',
+                                    format: 'double'
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
-        #swagger.parameters['time'] = {
-          in: 'path',
-          description: 'The date and time in the format YYYY-MM-DDTHH:mm:ssZ to filter readings.',
-          type: 'string'
-        }
-         #swagger.responses[200] = {
-             description: 'Found Reading',
-             content: {
-                 'application/json': {
-                     schema: {
-                         type: 'object',
-                         properties: {
-                             status: {
-                                 type: 'number'
-                             },
-                             message: {
-                                 type: 'string'
-                             },
-                             reading: {
-                                 type: 'object',
-                                 properties: {
-                                    _id: {
-                                        type: 'string'
-                                    },
-                                    deviceName: {
-                                        type: 'string'
-                                    },
-                                    time: {
-                                        type: 'string',
-                                        format: 'date-time'
-                                    },
-                                    latitude: {
-                                        type: 'number',
-                                        format: 'double'
-                                    },
-                                    longitude: {
-                                        type: 'number',
-                                        format: 'double'
-                                    },
-                                    humidity: {
-                                        type: 'number',
-                                        format: 'double'
-                                    },
-                                    precipitation: {
-                                        type: 'number',
-                                        format: 'double'
-                                    },
-                                    temperature: {
-                                        type: 'number',
-                                        format: 'double'
-                                    },
-                                    maxWindSpeed: {
-                                        type: 'number',
-                                        format: 'double'
-                                    },
-                                    solarRadiation: {
-                                        type: 'number',
-                                        format: 'double'
-                                    },
-                                    vaporPressure: {
-                                        type: 'number',
-                                        format: 'double'
-                                    },
-                                    windDirection: {
-                                        type: 'number',
-                                        format: 'double'
-                                    },
-                                    atmosphericPressure: {
-                                        type: 'number',
-                                        format: 'double'
-                                    },
-                                 }
-                             }
-                         }
-                     },
-                 }
-             }
-         }
+    }
+}
         #swagger.responses[400] = {
             description: 'Invalid Request',
             content: {
@@ -244,31 +220,36 @@ readingController.get(
              }
          } 
       */
-
     const { deviceName, time } = req.params;
-
     const parsedTime = new Date(decodeURIComponent(time));
 
     if (!isNaN(parsedTime.getTime())) {
-      Readings.getReadingByDateTime(deviceName, parsedTime)
-        .then((reading) => {
-          if (reading) {
+      const startHour = new Date(parsedTime);
+      startHour.setMinutes(0);
+      startHour.setSeconds(0);
+      const endHour = new Date(parsedTime);
+      endHour.setMinutes(59);
+      endHour.setSeconds(59);
+
+      Readings.getWeatherDataWithinHour(deviceName, startHour, endHour)
+        .then((weatherData) => {
+          if (weatherData && weatherData.length > 0) {
             res.status(200).json({
               status: 200,
-              message: "Reading Found",
-              reading: reading,
+              message: "Weather Data Found",
+              weatherData: weatherData,
             });
           } else {
             res.status(404).json({
               status: 404,
-              message: "Reading Not Found",
+              message: "Weather Data Not Found",
             });
           }
         })
         .catch((error) => {
           res.status(500).json({
             status: 500,
-            message: "Failed to get reading",
+            message: "Failed to get weather data" + error,
           });
         });
     } else {
@@ -285,170 +266,119 @@ readingController.get(
   auth(["admin", "student"]),
   (req, res) => {
     /* 
-        #swagger.summary = 'Get a reading by device name and specific date and time.'
-        #swagger.summary = 'Get readings within a date range.'
-      #swagger.parameters['startTime'] = {
-        in: 'query',
-        description: 'Start date and time in the format YYYY-MM-DDTHH:mm:ssZ.',
-        type: 'string'
-      }
-      #swagger.parameters['endTime'] = {
-        in: 'query',
-        description: 'End date and time in the format YYYY-MM-DDTHH:mm:ssZ.',
-        type: 'string'
-      }
-         #swagger.responses[200] = {
-             description: 'Found Reading',
-             content: {
-                 'application/json': {
-                     schema: {
-                         type: 'object',
-                         properties: {
-                             status: {
-                                 type: 'number'
-                             },
-                             message: {
-                                 type: 'string'
-                             },
-                             reading: {
-                                 type: 'object',
-                                 properties: {
-                                    _id: {
-                                        type: 'string'
-                                    },
-                                    deviceName: {
-                                        type: 'string'
-                                    },
-                                    time: {
-                                        type: 'string',
-                                        format: 'date-time'
-                                    },
-                                    latitude: {
-                                        type: 'number',
-                                        format: 'double'
-                                    },
-                                    longitude: {
-                                        type: 'number',
-                                        format: 'double'
-                                    },
-                                    humidity: {
-                                        type: 'number',
-                                        format: 'double'
-                                    },
-                                    precipitation: {
-                                        type: 'number',
-                                        format: 'double'
-                                    },
-                                    temperature: {
-                                        type: 'number',
-                                        format: 'double'
-                                    },
-                                    maxWindSpeed: {
-                                        type: 'number',
-                                        format: 'double'
-                                    },
-                                    solarRadiation: {
-                                        type: 'number',
-                                        format: 'double'
-                                    },
-                                    vaporPressure: {
-                                        type: 'number',
-                                        format: 'double'
-                                    },
-                                    windDirection: {
-                                        type: 'number',
-                                        format: 'double'
-                                    },
-                                    atmosphericPressure: {
-                                        type: 'number',
-                                        format: 'double'
-                                    },
-                                 }
-                             }
-                         }
-                     },
-                 }
-             }
-         }
-        #swagger.responses[400] = {
-            description: 'Invalid Request',
-            content: {
-                'application/json': {
-                    schema: {
-                        type: 'object',
-                        properties: {
-                            status: {
-                                type: 'number'
-                            },
-                            message: {
-                                type: 'string'
-                            },
-                        }
+        #swagger.summary = 'Get maximum temperature readings by device name and date range.'
+        #swagger.parameters['startTime'] = {
+          in: 'query',
+          description: 'Start date and time in the format YYYY-MM-DDTHH:mm:ssZ.',
+          type: 'string'
+        }
+        #swagger.parameters['endTime'] = {
+          in: 'query',
+          description: 'End date and time in the format YYYY-MM-DDTHH:mm:ssZ.',
+          type: 'string'
+        }
+        #swagger.responses[200] = {
+          description: 'Maximum Temperature Readings Found',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    deviceName: {
+                      type: 'string'
                     },
+                    time: {
+                      type: 'string',
+                      format: 'date-time'
+                    },
+                    temp: {
+                      type: 'number',
+                      format: 'double'
+                    }
+                  }
                 }
+              }
             }
+          }
+        }
+        #swagger.responses[400] = {
+          description: 'Invalid Request',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  status: {
+                    type: 'number'
+                  },
+                  message: {
+                    type: 'string'
+                  },
+                }
+              },
+            }
+          }
         } 
         #swagger.responses[404] = {
-            description: 'Not Found',
-            content: {
-                'application/json': {
-                    schema: {
-                        type: 'object',
-                        properties: {
-                            status: {
-                                type: 'number'
-                            },
-                            message: {
-                                type: 'string'
-                            },
-                        }
-                    },
+          description: 'Not Found',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  status: {
+                    type: 'number'
+                  },
+                  message: {
+                    type: 'string'
+                  },
                 }
+              },
             }
+          }
         }  
-         #swagger.responses[500] = {
-             description: 'Database error',
-             content: {
-                 'application/json': {
-                     schema: {
-                         type: 'object',
-                         properties: {
-                             status: {
-                                 type: 'number'
-                             },
-                             message: {
-                                 type: 'string'
-                             },
-                         }
-                     },
-                 }
-             }
-         } 
-      */
+        #swagger.responses[500] = {
+          description: 'Database error',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  status: {
+                    type: 'number'
+                  },
+                  message: {
+                    type: 'string'
+                  },
+                }
+              },
+            }
+          }
+        } 
+    */
 
     const startTime = new Date(req.query.startTime);
     const endTime = new Date(req.query.endTime);
 
     if (!isNaN(startTime.getTime()) && !isNaN(endTime.getTime())) {
-      Readings.getReadingsByDateRange(startTime, endTime)
-        .then((readings) => {
-          if (readings.length > 0) {
-            res.status(200).json({
-              status: 200,
-              message: "Readings Found",
-              readings: readings,
-            });
+      Readings.getMaxTemperatures(startTime, endTime)
+        .then((maxTemperatures) => {
+          if (maxTemperatures.length > 0) {
+            res.status(200).json(maxTemperatures);
           } else {
             res.status(404).json({
               status: 404,
-              message: "Readings Not Found",
+              message:
+                "No maximum temperatures found within the specified date range.",
             });
           }
         })
         .catch((error) => {
           res.status(500).json({
             status: 500,
-            message: "Failed to get readings",
+            message: "Failed to retrieve maximum temperatures",
           });
         });
     } else {
@@ -644,20 +574,29 @@ readingController.post(
 
     const readings = req.body;
 
-    Readings.create(readings)
-      .then((insertedReadings) => {
-        res.status(200).json({
-          status: 200,
-          message: "Readings Created",
-          readings: insertedReadings,
-        });
-      })
-      .catch((error) => {
-        res.status(500).json({
-          status: 500,
-          message: "Failed to create readings",
-        });
+    if (!Array.isArray(readings) || readings.length === 0) {
+      res.status(400).json({
+        status: 400,
+        message:
+          "Invalid Request: Please provide a non-empty array of readings.",
       });
+    } else {
+      Readings.create(readings)
+        .then((insertedReading) => {
+          console.log(insertedReading);
+          res.status(200).json({
+            status: 200,
+            message: "Readings Created",
+            readings: insertedReading,
+          });
+        })
+        .catch((error) => {
+          res.status(500).json({
+            status: 500,
+            message: "Database error: " + error,
+          });
+        });
+    }
   }
 );
 

@@ -34,7 +34,7 @@ export function Reading(
 }
 
 export async function create(readings) {
-  db.collection("readings").insertMany(readings);
+  return db.collection("readings").insertMany(readings);
 }
 
 export async function update(reading) {
@@ -49,50 +49,76 @@ export async function update(reading) {
   );
 }
 
-export async function getReadingByDateTime(deviceName, time) {
-  // attempt to find the first matching user by email
-  let reading = await db
+export async function getWeatherDataWithinHour(deviceName, startHour, endHour) {
+  const weatherData = await db
     .collection("readings")
-    .findOne({ deviceName: deviceName, time: time });
+    .find({
+      deviceName: deviceName,
+      time: {
+        $gte: startHour,
+        $lte: endHour,
+      },
+    })
+    .project({
+      deviceName: 1,
+      time: 1,
+      temperature: 1,
+      atmosphericPressure: 1,
+      solarRadiation: 1,
+      precipitation: 1,
+      _id: 0,
+    })
+    .toArray();
 
-  // check if a user was found and handle the result
-  if (reading) {
-    return reading;
-  } else {
-    return Promise.reject("No reading found from " + deviceName + "at " + time);
-  }
+  return weatherData;
 }
 
-export async function getReadingsByDateRange(startTime, endTime) {
-  // Attempt to find readings within the specified date range
+export async function getMaxTemperatures(startTime, endTime) {
+  // Attempt to find maximum temperatures for each sensor within the specified date range
   const readings = await db
     .collection("readings")
     .find({
-      time: {
-        $gte: startTime,
-        $lte: endTime,
-      },
+      time: { $gte: startTime, $lte: endTime },
     })
     .toArray();
 
   if (readings.length > 0) {
-    return readings;
+    const maxTemperatures = readings.reduce((acc, reading) => {
+      if (
+        !acc[reading.deviceName] ||
+        acc[reading.deviceName].temp < reading.temperature
+      ) {
+        acc[reading.deviceName] = {
+          deviceName: reading.deviceName,
+          time: reading.time,
+          temp: reading.temperature,
+        };
+      }
+      return acc;
+    }, {});
+    console.log(maxTemperatures);
+
+    const result = Object.values(maxTemperatures);
+
+    return result;
   } else {
-    return Promise.reject("No readings found within the specified date range.");
+    return Promise.reject(
+      "No maximum temperatures found within the specified date range."
+    );
   }
 }
 
 export async function getMaxPrecipitation(deviceName) {
   try {
-    const currentDate = new Date();
-    const fiveMonthsAgo = new Date(currentDate);
+    const fiveMonthsAgo = new Date();
     fiveMonthsAgo.setMonth(fiveMonthsAgo.getMonth() - 5);
     console.log(fiveMonthsAgo);
+    console.log(deviceName);
     const result = await db
       .collection("readings")
       .find({
         deviceName: deviceName,
-        time: { $gte: "2023-05-17T03:49:46.000Z" },
+        time: { $gte: fiveMonthsAgo.toISOString() },
       })
       .sort({ precipitation: -1 })
       .limit(1)

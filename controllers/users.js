@@ -101,7 +101,9 @@ userController.post("/users/login", (req, res) => {
       if (bcrypt.compareSync(loginData.password, user.password)) {
         // Generate new api key
         user.authKey = uuid4().toString();
-        user.lastLogin = new Date();
+        if (user.role !== "admin") {
+          user.lastLogin = new Date();
+        }
 
         // Update user record with new api key
         Users.update(user).then((result) => {
@@ -388,6 +390,24 @@ userController.post("/users", auth(["admin"]), (req, res) => {
                 },
             }
         }
+    }
+    #swagger.responses[400] = {
+        description: 'Bad Request',
+        content: {
+            'application/json': {
+                schema: {
+                    type: 'object',
+                    properties: {
+                        status: {
+                            type: 'number'
+                        },
+                        message: {
+                            type: 'string'
+                        },
+                    }
+                },
+            }
+        }
     } 
     #swagger.responses[500] = {
         description: 'Database error',
@@ -410,6 +430,13 @@ userController.post("/users", auth(["admin"]), (req, res) => {
     */
   // Get the user data out of the request
   const { studentNumber, email, password, role } = req.body;
+
+  if (!studentNumber || !email || !password || !role) {
+    return res.status(400).json({
+      status: 400,
+      message: "Invalid input data",
+    });
+  }
 
   // hash the password if it isn't already hashed
   let hashedPassword = password;
@@ -447,28 +474,32 @@ userController.post("/users", auth(["admin"]), (req, res) => {
 
 userController.options("/users/role", cors());
 userController.put("/users/role", auth(["admin"]), (req, res) => {
+  // include body schema
   /* 
 #swagger.summary = 'Update roles for users within a date range based on last login.'
-#swagger.parameters['startDate'] = {
-    in: 'body',
-    description: 'The start date for the date range.',
-    required: true,
-    type: 'string',
-    format: 'date-time'
-}
-#swagger.parameters['endDate'] = {
-    in: 'body',
-    description: 'The end date for the date range.',
-    required: true,
-    type: 'string',
-    format: 'date-time'
-}
-#swagger.parameters['role'] = {
-    in: 'body',
-    description: 'The new role to assign to users.',
-    required: true,
-    type: 'string',
-    enum: ['student', 'admin', 'station']
+#swagger.requestBody = {
+    description: 'Parameters for updating user roles within a date range.',
+    content: {
+        'application/json': {
+            schema: {
+                type: 'object',
+                properties: {
+                    startDate: {
+                        type: 'string',
+                        format: 'date-time'
+                    },
+                    endDate: {
+                        type: 'string',
+                        format: 'date-time'
+                    },
+                    role: {
+                        type: 'string',
+                        enum: ['student', 'admin', 'station']
+                    }
+                }
+            }
+        }
+    }
 }
 #swagger.responses[200] = {
     description: 'Roles updated successfully.',
@@ -530,10 +561,12 @@ userController.put("/users/role", auth(["admin"]), (req, res) => {
 
   Users.updateRole(startDate, endDate, role)
     .then((result) => {
+      console.log(result);
       if (result.modifiedCount > 0) {
         res.status(200).json({
           status: 200,
           message: "roles updated successfully.",
+          result: result,
         });
       } else {
         res.status(404).json({
@@ -624,6 +657,7 @@ userController.delete(
             status: 200,
             message:
               "Users who have not logged in for 30 days or more deleted successfully.",
+            result: result,
           });
         } else {
           res.status(404).json({
@@ -867,6 +901,7 @@ userController.delete("/users/:id", auth(["admin"]), (req, res) => {
         res.status(200).json({
           status: 200,
           message: "User deleted successfully",
+          userID: userID,
         });
       } else {
         res.status(404).json({

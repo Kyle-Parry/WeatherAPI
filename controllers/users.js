@@ -474,7 +474,6 @@ userController.post("/users", auth(["admin"]), (req, res) => {
 
 userController.options("/users/role", cors());
 userController.put("/users/role", auth(["admin"]), (req, res) => {
-  // include body schema
   /* 
 #swagger.summary = 'Update roles for users within a date range based on last login.'
 #swagger.requestBody = {
